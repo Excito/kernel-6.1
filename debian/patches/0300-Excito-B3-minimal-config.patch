@@ -1,0 +1,120 @@
+--- /dev/null
++++ b/arch/arm/configs/bubba3-minimal_defconfig
+@@ -0,0 +1,87 @@
++CONFIG_LOCALVERSION="-minimal"
++# CONFIG_LOCALVERSION_AUTO is not set
++# CONFIG_CROSS_MEMORY_ATTACH is not set
++CONFIG_NO_HZ_IDLE=y
++# CONFIG_MULTIUSER is not set
++# CONFIG_SYSFS_SYSCALL is not set
++# CONFIG_FHANDLE is not set
++# CONFIG_POSIX_TIMERS is not set
++# CONFIG_BUG is not set
++# CONFIG_BASE_FULL is not set
++# CONFIG_FUTEX is not set
++# CONFIG_EPOLL is not set
++# CONFIG_SIGNALFD is not set
++# CONFIG_TIMERFD is not set
++# CONFIG_EVENTFD is not set
++# CONFIG_SHMEM is not set
++# CONFIG_AIO is not set
++# CONFIG_IO_URING is not set
++# CONFIG_ADVISE_SYSCALLS is not set
++# CONFIG_MEMBARRIER is not set
++# CONFIG_KALLSYMS is not set
++# CONFIG_RSEQ is not set
++CONFIG_EMBEDDED=y
++# CONFIG_VM_EVENT_COUNTERS is not set
++# CONFIG_COMPAT_BRK is not set
++# CONFIG_SLAB_MERGE_DEFAULT is not set
++# CONFIG_ARCH_MULTI_V7 is not set
++CONFIG_ARCH_MVEBU=y
++CONFIG_MACH_KIRKWOOD=y
++CONFIG_KIRKWOOD_ALWAYS_RESTART=y
++# CONFIG_CPU_FEROCEON_OLD_ID is not set
++# CONFIG_ARM_THUMB is not set
++# CONFIG_CACHE_FEROCEON_L2 is not set
++CONFIG_AEABI=y
++# CONFIG_CPU_SW_DOMAIN_PAN is not set
++# CONFIG_UACCESS_WITH_MEMCPY is not set
++CONFIG_ARM_APPENDED_DTB=y
++CONFIG_ARM_ATAG_DTB_COMPAT=y
++# CONFIG_SUSPEND is not set
++# CONFIG_SECCOMP is not set
++# CONFIG_STACKPROTECTOR is not set
++# CONFIG_COMPAT_32BIT_TIME is not set
++# CONFIG_BLOCK is not set
++# CONFIG_BINFMT_ELF is not set
++# CONFIG_BINFMT_ELF_FDPIC is not set
++# CONFIG_BINFMT_SCRIPT is not set
++# CONFIG_COREDUMP is not set
++# CONFIG_COMPACTION is not set
++# CONFIG_PCIEASPM is not set
++# CONFIG_STANDALONE is not set
++# CONFIG_PREVENT_FIRMWARE_BUILD is not set
++# CONFIG_FW_LOADER is not set
++# CONFIG_ALLOW_DEV_COREDUMP is not set
++# CONFIG_INPUT is not set
++# CONFIG_SERIO is not set
++# CONFIG_VT is not set
++# CONFIG_UNIX98_PTYS is not set
++# CONFIG_LEGACY_PTYS is not set
++# CONFIG_LDISC_AUTOLOAD is not set
++CONFIG_SERIAL_8250=y
++# CONFIG_SERIAL_8250_DEPRECATED_OPTIONS is not set
++# CONFIG_SERIAL_8250_16550A_VARIANTS is not set
++CONFIG_SERIAL_8250_CONSOLE=y
++# CONFIG_SERIAL_8250_PCI is not set
++CONFIG_SERIAL_8250_RUNTIME_UARTS=2
++CONFIG_SERIAL_OF_PLATFORM=y
++# CONFIG_HW_RANDOM is not set
++# CONFIG_DEVMEM is not set
++# CONFIG_DEVPORT is not set
++# CONFIG_GPIO_CDEV is not set
++# CONFIG_HWMON is not set
++# CONFIG_VGA_ARB is not set
++# CONFIG_USB_SUPPORT is not set
++# CONFIG_VIRTIO_MENU is not set
++# CONFIG_VHOST_MENU is not set
++# CONFIG_IOMMU_SUPPORT is not set
++# CONFIG_PHY_MVEBU_A3700_UTMI is not set
++# CONFIG_FILE_LOCKING is not set
++# CONFIG_DNOTIFY is not set
++# CONFIG_INOTIFY_USER is not set
++# CONFIG_PROC_FS is not set
++# CONFIG_SYSFS is not set
++# CONFIG_MISC_FILESYSTEMS is not set
++# CONFIG_SYMBOLIC_ERRNAME is not set
++# CONFIG_DEBUG_MISC is not set
++# CONFIG_FTRACE is not set
++# CONFIG_RUNTIME_TESTING_MENU is not set
+--- /dev/null
++++ b/build-minimal.sh
+@@ -0,0 +1,27 @@
++#!/bin/bash
++
++quilt push -a
++r=$?
++if [ $r -ne 0 -a $r -ne 2 ] ; then
++    exit $r
++fi
++
++set -e
++
++export BUILD_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/_minimal
++export CROSS_COMPILE=`dpkg-architecture -aarmel -q DEB_HOST_GNU_TYPE 2>/dev/null`-
++export NUM_JOBS=$((`grep -c '^processor' /proc/cpuinfo` + 1))
++
++make ARCH=arm mrproper
++make ARCH=arm O=$BUILD_DIR bubba3-minimal_defconfig
++make ARCH=arm O=$BUILD_DIR -j$NUM_JOBS zImage
++make ARCH=arm O=$BUILD_DIR -j$NUM_JOBS kirkwood-b3.dtb
++
++KERNEL_VERSION=`sed 's/+$//' $BUILD_DIR/include/config/kernel.release`
++
++cp $BUILD_DIR/arch/arm/boot/zImage $BUILD_DIR
++cp $BUILD_DIR/arch/arm/boot/dts/kirkwood-b3.dtb $BUILD_DIR
++
++debian/build_b3_uImage.sh $BUILD_DIR $KERNEL_VERSION
++
++echo "B3 minimal image is ready in $BUILD_DIR/uImage"

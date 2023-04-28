@@ -1,0 +1,7 @@
+linux (1:6.1.0-1) unstable; urgency=medium
+
+  * New upstream version
+  * Ported patches + configuration from 5.10 series
+  * Added reversal patches to keep dtc scripts on the 5.10 version
+
+ -- Charles Leclerc <leclerc.charles@gmail.com>  Fri, 28 Apr 2023 11:49:32 +0000

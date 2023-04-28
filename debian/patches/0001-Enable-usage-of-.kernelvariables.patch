@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -395,6 +395,8 @@
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+ ARCH		?= $(SUBARCH)
+ 
++-include .kernelvariables
++
+ # Architecture as present in compile.h
+ UTS_MACHINE 	:= $(ARCH)
+ SRCARCH 	:= $(ARCH)

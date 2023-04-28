@@ -1,0 +1,85 @@
+Updates of directory scripts/dtc (local copy of device-tree-compiler) are incompatible with the B3 u-boot current version.
+
+As we cannot update U-Boot we need to keep the local kernel copy on the last know working version (1.6.0-gcbca977e introduced
+in commit 6e9c9686d82656). For this we revert patches in the history that attempt to update it.
+
+Note that usually dtc upgrades are done on the master branch and not on the maintaining branches.
+
+This document is meant to keep a trace of those reversal operations to keep track and help for future kernel upgrades.
+
+1. Update to branch 6.1.x from branch 5.10.x
+
+1.1 Commits reversal
+
+This was the first time the issue happened. From the linux/stable git repository, we first branch out of the linux-6.1.y last version and 
+list merge commits that impacts the scripts/dtc folder ; 5.10.x is the last working version so we start our search from tag v5.10 until the first
+version of the v6.1.x branch :
+
+[6.1-fix] git log --pretty="%h %cn %s" --decorate --merges --first-parent v5.10..v6.1 -- scripts/dtc
+706eacadd5c5 Linus Torvalds Merge tag 'devicetree-for-6.1' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+16477cdfefdb Linus Torvalds Merge tag 'asm-generic-5.19' of git://git.kernel.org/pub/scm/linux/kernel/git/arnd/asm-generic
+9bf3fc500785 Linus Torvalds Merge tag 'devicetree-for-5.18' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+3ce62cf4dc3b Linus Torvalds Merge tag 'flexible-array-transformations-5.18-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/gustavoars/linux
+0809edbae347 Linus Torvalds Merge tag 'devicetree-fixes-for-5.17-1' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+dcd68326d29b Linus Torvalds Merge tag 'devicetree-for-5.16' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+0f979d815cd5 Linus Torvalds Merge tag 'kbuild-v5.13-2' of git://git.kernel.org/pub/scm/linux/kernel/git/masahiroy/linux-kbuild
+6bf331d5ce83 Linus Torvalds Merge tag 'devicetree-fixes-for-5.12-1' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+a99163e9e708 Linus Torvalds Merge tag 'devicetree-for-5.12' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+
+Then for each of those merges, we need to search for update commits. These merges sometimes are larger than only dtc and
+can impact other part of the tree we need to revert as well. So it needs to be done carefully.
+
+The safe way is first to recursively go through sub-merges, if any. For example the first one (no more folder filtering) :
+
+[master] git log --pretty="%h %cn %s" --decorate --merges 706eacadd5c5^..706eacadd5c5
+706eacadd5c5 Linus Torvalds Merge tag 'devicetree-for-6.1' of git://git.kernel.org/pub/scm/linux/kernel/git/robh/linux
+
+There is no more merge commits under this one, so now we list the merge commits, only excluding the 'Documentation' folder :
+[master] git log --pretty="%h %cn %s" --decorate --no-merges 706eacadd5c5^..706eacadd5c5 -- . ':^Documentation'
+7a7f58575483 Rob Herring of: base: Shift refcount decrement in of_find_last_cache_level()
+88269151be67 Rob Herring of: base: make of_device_compatible_match() accept const device node
+f1ad5338a4d5 Rob Herring of: Fix "dma-ranges" handling for bus controllers
+17005609548f Rob Herring of: fdt: Remove unused struct fdt_scan_status
+b6acf8073517 Rob Herring dt: Add a check for undocumented compatible strings in kernel
+d7c6ea024c08 Rob Herring kbuild: take into account DT_SCHEMA_FILES changes while checking dtbs
+e7c21940463c Rob Herring dt-bindings: i2c: migrate mt7621 text bindings to YAML
+d5e3050c0feb Rob Herring of/fdt: Don't calculate initrd size from DT if start > end
+472d7b9e8141 Rob Herring dt-bindings: leds: Expand LED_COLOR_ID definitions
+27244cbda827 Rob Herring of: irq: Report individual failures in of_irq_init()
+ed18a9b140bc Rob Herring dt-bindings: misc: fastrpc convert bindings to yaml
+59f9072f6e48 Rob Herring of: unittest: taint the kernel when of unittest runs
+7a12dd077e52 Rob Herring of: move from strlcpy with unused retval to strscpy
+
+Now we can review each of those commits and decide wether to revert them or not. In this case, no reversal seems needed.
+
+Here are the results for the top merges  :
+706eacadd5c5 kept
+16477cdfefdb kept
+9bf3fc500785 kept
+3ce62cf4dc3b kept
+0809edbae347 kept
+---
+dcd68326d29b :
+
+here we have an update commit :
+   a77725a9a3c5 Rob Herring scripts/dtc: Update to upstream version v1.6.1-19-g0a3a9d3449c8
+
+We simply revert it :
+[fix-6.1] git revert a77725a9a3c5
+
+This creates a revert commit in the 6.1 branch we'll user later to generate a patch
+---
+0f979d815cd5 kept
+6bf331d5ce83 kept
+---
+
+a99163e9e708 :
+
+Here we have another update commit :
+   79edff12060f Rob Herring scripts/dtc: Update to upstream version v1.6.0-51-g183df9e9c2b9
+
+We simply revert it :
+[fix-6.1] git revert 79edff12060f
+
+1.2 Patch generation
+

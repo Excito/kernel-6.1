@@ -1,0 +1,11 @@
+0001-Enable-usage-of-.kernelvariables.patch
+0002-remove-debian-packaging.patch
+0100-Revert-scripts-dtc-Update-to-upstream-version-v1.6.1.patch
+0101-Revert-scripts-dtc-Update-to-upstream-version-v1.6.0.patch
+0200-Excito-B3-board.patch
+0201-Settings-for-marvell-88e1116.patch
+0202-Marvell-reverse-led-fix.patch
+0203-Disable-tso-marvell643xx.patch
+0204-Reset-when-powered-off-or-halt-option.patch
+0300-Excito-B3-minimal-config.patch
+0301-Excito-B3-config.patch
