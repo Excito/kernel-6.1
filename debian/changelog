@@ -1,3 +1,9 @@
+linux (6.1.26-1) unstable; urgency=medium
+
+  * New upstream version
+
+ -- Charles Leclerc <leclerc.charles@gmail.com>  Fri, 28 Apr 2023 15:59:37 +0000
+
 linux (6.1.0-1) unstable; urgency=medium
 
   * New upstream version

@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -395,6 +395,8 @@
+@@ -402,6 +402,8 @@
  # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
  ARCH		?= $(SUBARCH)
  
