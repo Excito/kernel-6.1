@@ -90,7 +90,7 @@
 +# CONFIG_RUNTIME_TESTING_MENU is not set
 --- /dev/null
 +++ b/build-minimal.sh
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,24 @@
 +#!/bin/bash
 +
 +quilt push -a
@@ -111,9 +111,6 @@
 +make ARCH=arm O=$BUILD_DIR -j$NUM_JOBS kirkwood-b3.dtb
 +
 +KERNEL_VERSION=`sed 's/+$//' $BUILD_DIR/include/config/kernel.release`
-+
-+cp $BUILD_DIR/arch/arm/boot/zImage $BUILD_DIR
-+cp $BUILD_DIR/arch/arm/boot/dts/kirkwood-b3.dtb $BUILD_DIR
 +
 +debian/build_b3_uImage.sh $BUILD_DIR $KERNEL_VERSION
 +

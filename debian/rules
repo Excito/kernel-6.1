@@ -26,6 +26,12 @@ ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
 endif
 KERNEL_ARCH := $(DEB_HOST_GNU_CPU)
 
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+else
+	NUMJOBS = 1
+endif
+
 BUILD_DIR=debian/build
 
 export DEB_HOST_ARCH DEB_HOST_GNU_TYPE DEB_BUILD_ARCH
@@ -46,97 +52,89 @@ PACKAGE_DIR=debian/$(PACKAGE)
 	+dh $@ --parallel
 
 define REAL_VERSION
-$(shell cat $(SOURCE_DIR)/include/config/kernel.release)
+$(shell cat $(BUILD_DIR)/include/config/kernel.release)
 endef
 
-override_dh_auto_configure: SOURCE_FILES = $(filter-out debian .git .pc, $(wildcard * .[^.]*))
-override_dh_auto_configure: SOURCE_DIR = $(BUILD_DIR)/source
 override_dh_auto_configure: 
-	rm -rf $(SOURCE_DIR)
-	mkdir -p $(SOURCE_DIR)
-	cp -al $(SOURCE_FILES) $(SOURCE_DIR)
-	chmod -R u+rw,go=rX $(SOURCE_DIR)
-	touch $(SOURCE_DIR)/.scmversion
+	rm -rf $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)
+	touch .scmversion
 
-	echo '-$(DEB_REVISION)' > $(SOURCE_DIR)/localversion
-	echo 'override ARCH = $(DEB_HOST_ARCH_CPU)' >> $(SOURCE_DIR)/.kernelvariables
-	echo 'override KERNELRELEASE = $(ABINAME)'  >> $(SOURCE_DIR)/.kernelvariables
+	echo '-$(DEB_REVISION)' > $(BUILD_DIR)/localversion
+	echo 'override ARCH = $(DEB_HOST_ARCH_CPU)' >> $(BUILD_DIR)/.kernelvariables
+	echo 'override KERNELRELEASE = $(ABINAME)'  >> $(BUILD_DIR)/.kernelvariables
 ifneq (,$(findstring ccache,$(DEB_BUILD_OPTIONS)))
-	echo 'CCACHE = ccache' >> $(SOURCE_DIR)/.kernelvariables
-	echo 'CC = ccache $(CROSS_COMPILE)gcc' >> $(SOURCE_DIR)/.kernelvariables
+	echo 'CCACHE = ccache' >> $(BUILD_DIR)/.kernelvariables
+	echo 'CC = ccache $(CROSS_COMPILE)gcc' >> $(BUILD_DIR)/.kernelvariables
 endif
-	echo 'ifneq ($$(DEB_BUILD_ARCH),$$(DEB_HOST_ARCH))' >> $(SOURCE_DIR)/.kernelvariables
-	echo 'override CROSS_COMPILE = $$(DEB_HOST_GNU_TYPE)-' >> $(SOURCE_DIR)/.kernelvariables
-	echo 'endif' >> $(SOURCE_DIR)/.kernelvariables
-	+$(MAKE_CLEAN) -C $(SOURCE_DIR) $(CONFIG)
-	+$(MAKE_CLEAN) -C $(SOURCE_DIR) prepare
+	echo 'ifneq ($$(DEB_BUILD_ARCH),$$(DEB_HOST_ARCH))' >> $(BUILD_DIR)/.kernelvariables
+	echo 'override CROSS_COMPILE = $$(DEB_HOST_GNU_TYPE)-' >> $(BUILD_DIR)/.kernelvariables
+	echo 'endif' >> $(BUILD_DIR)/.kernelvariables
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) $(CONFIG)
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) prepare
 
-override_dh_auto_build: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_auto_build:
-	+$(MAKE_CLEAN) -C $(SOURCE_DIR) zImage
-	+$(MAKE_CLEAN) -C $(SOURCE_DIR) kirkwood-b3.dtb
-	cp $(SOURCE_DIR)/arch/arm/boot/zImage $(BUILD_DIR)
-	cp $(SOURCE_DIR)/arch/arm/boot/dts/kirkwood-b3.dtb $(BUILD_DIR)
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) -j$(NUMJOBS) zImage
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) kirkwood-b3.dtb
 	debian/build_b3_uImage.sh $(BUILD_DIR) $(call REAL_VERSION)
-	mv $(BUILD_DIR)/uImage $(SOURCE_DIR)
-	+$(MAKE_CLEAN) -C $(SOURCE_DIR) modules
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) -j$(NUMJOBS) modules
 	sed 's/@VERSION@/$(call REAL_VERSION)/g' < debian/bubba3-kernel.prerm.in > debian/bubba3-kernel.prerm
 	sed 's/@VERSION@/$(call REAL_VERSION)/g' < debian/bubba3-kernel.postinst.in > debian/bubba3-kernel.postinst
 
 override_dh_installmodules:
 	dh_installmodules -n
 
-override_dh_auto_install: SOURCE_DIR=$(BUILD_DIR)/source
 ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
 override_dh_auto_install: install_headers
 endif
 override_dh_auto_install:
-	+$(MAKE_CLEAN) -C $(SOURCE_DIR) INSTALL_MOD_PATH=$(CURDIR)/$(PACKAGE_DIR) INSTALL_MOD_STRIP=1 modules_install
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) INSTALL_MOD_PATH=$(CURDIR)/$(PACKAGE_DIR) INSTALL_MOD_STRIP=1 modules_install
 	mkdir -p $(PACKAGE_DIR)/boot
-	cp $(SOURCE_DIR)/uImage $(PACKAGE_DIR)/boot
-	cp $(SOURCE_DIR)/.config $(PACKAGE_DIR)/boot/config-$(call REAL_VERSION)
-	cp $(SOURCE_DIR)/System.map $(PACKAGE_DIR)/boot/System.map-$(call REAL_VERSION)
+	cp $(BUILD_DIR)/uImage $(PACKAGE_DIR)/boot
+	cp $(BUILD_DIR)/.config $(PACKAGE_DIR)/boot/config-$(call REAL_VERSION)
+	cp $(BUILD_DIR)/System.map $(PACKAGE_DIR)/boot/System.map-$(call REAL_VERSION)
 	find $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/ \
 		-mindepth 1 -maxdepth 1 \
 		\! -name kernel \! -name modules.order \
 		\! -name modules.builtin \
 		-exec rm {} \+
-	rm $(PACKAGE_DIR)/lib/firmware -rf	
+	rm -rf $(PACKAGE_DIR)/lib/firmware
 
 install_headers: PACKAGE_NAME = $(HEADER_PACKAGE)
 install_headers: BASE_DIR = /usr/src/$(PACKAGE_NAME)
 install_headers: PACKAGE_DIR = debian/$(PACKAGE_NAME)
-install_headers: INSTALL_DIR = $(PACKAGE_DIR)/$(BASE_DIR)
+install_headers: INSTALL_DIR = $(PACKAGE_DIR)$(BASE_DIR)
 install_headers: DH_OPTIONS = -p$(PACKAGE_NAME) -a$(DEB_HOST_ARCH)
-install_headers: SOURCE_DIR=$(BUILD_DIR)/source
 install_headers:
-	cd $(SOURCE_DIR); \
-		( \
-		echo Makefile; \
-		echo .kernelvariables; \
-		echo .config; \
-		echo arch/$(KERNEL_ARCH)/kernel/asm-offsets.s; \
-		echo Module.symvers; \
-		find include -type f; \
-		find $$(find arch/$(KERNEL_ARCH) \( -name include \) -type d -print) -print; \
-		) \
-		| \
-		cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
+	( \
+	echo Makefile; \
+	find include -type f; \
+	find $$(find arch/$(KERNEL_ARCH) \( -name include \) -type d -print) -print; \
+	) \
+	| \
+	cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
+
+	cd $(BUILD_DIR)
+	( \
+	echo .kernelvariables; \
+	echo .config; \
+	echo arch/$(KERNEL_ARCH)/kernel/asm-offsets.s; \
+	echo Module.symvers; \
+	) \
+	| \
+	cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
 	
 	cp -a scripts $(INSTALL_DIR)
 
 	mkdir -p $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)
 	ln -s /usr/src/$(PACKAGE_NAME) $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/build
 
-override_dh_clean: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_clean:
 	rm -f debian/bubba3-kernel.prerm debian/bubba3-kernel.postinst
 	rm -rf $(BUILD_DIR)
 	dh_clean $@
 
-override_dh_auto_clean: SOURCE_DIR=$(BUILD_DIR)/source
 override_dh_auto_clean:
 	+ARCH=$(DEB_HOST_ARCH_CPU) make mrproper
-	+test ! -e $(SOURCE_DIR) || $(MAKE_CLEAN) -C '$(SOURCE_DIR)' clean
 
 override_dh_auto_test:

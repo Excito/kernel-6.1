@@ -1,4 +1,4 @@
-linux (1:6.1.0-1) unstable; urgency=medium
+linux (6.1.0-1) unstable; urgency=medium
 
   * New upstream version
   * Ported patches + configuration from 5.10 series
