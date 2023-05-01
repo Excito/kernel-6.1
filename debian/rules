@@ -9,21 +9,17 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
+include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/pkg-info.mk
+
 UPLOADER  := $(shell dpkg-parsechangelog | sed -ne 's,^Maintainer: .[^<]*<\([^>]*\)>,\1,p')
 
-DEB_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' ')
-DEB_NOEPOCH_VERSION := $(shell echo $(DEB_VERSION) | cut -d: -f2-)
-DEB_UPSTREAM_VERSION := $(shell echo $(DEB_NOEPOCH_VERSION) | sed 's/-[^-]*$$//')
-DEB_REVISION :=  $(shell echo $(DEB_NOEPOCH_VERSION) | awk -F- '{print $$(NF)}')
+DEB_REVISION :=  $(shell echo $(DEB_VERSION) | awk -F- '{print $$(NF)}')
+ABINAME=$(DEB_VERSION_UPSTREAM_REVISION)
+UPSTREAMVERSION=$(DEB_VERSION_UPSTREAM)
 
-ABINAME=$(DEB_NOEPOCH_VERSION)
-UPSTREAMVERSION=$(DEB_UPSTREAM_VERSION)
+# Cross compilation setup
 
-include /usr/share/dpkg/architecture.mk
-
-ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
-	CROSS_COMPILE := $(DEB_HOST_GNU_TYPE)-
-endif
 KERNEL_ARCH := $(DEB_HOST_GNU_CPU)
 
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
@@ -33,11 +29,25 @@ else
 endif
 
 BUILD_DIR=debian/build
+BUILD_HEADERS_DIR=debian/build-headers
 
 export DEB_HOST_ARCH DEB_HOST_GNU_TYPE DEB_BUILD_ARCH
 
 setup_env := env -u ABINAME -u ARCH -u FEATURESET -u FLAVOUR -u VERSION -u LOCALVERSION
 setup_env += DISTRIBUTION_OFFICIAL_BUILD=1 DISTRIBUTION_UPLOADER=$(UPLOADER) DISTRIBUTION_VERSION="$(DEB_VERSION)"
+
+ifneq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+	setup_env += CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)-
+	setup_env += ARCH=$(KERNEL_ARCH)
+	HEADERS_CC := $(DEB_HOST_GNU_TYPE)-gcc
+else
+	HEADERS_CC := gcc
+endif
+
+ifneq (,$(findstring ccache,$(DEB_BUILD_OPTIONS)))
+	setup_env += 'CC="ccache $(CROSS_COMPILE)gcc"'
+	HEADERS_CC := "ccache $(HEADERS_CC)"
+endif
 
 MAKE_CLEAN = $(setup_env) $(MAKE)
 
@@ -56,23 +66,15 @@ $(shell cat $(BUILD_DIR)/include/config/kernel.release)
 endef
 
 override_dh_auto_configure: 
-	rm -rf $(BUILD_DIR)
-	mkdir -p $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(BUILD_HEADERS_DIR)
+	mkdir -p $(BUILD_DIR) $(BUILD_HEADERS_DIR)
 	touch .scmversion
-
 	echo '-$(DEB_REVISION)' > $(BUILD_DIR)/localversion
-	echo 'override ARCH = $(DEB_HOST_ARCH_CPU)' >> $(BUILD_DIR)/.kernelvariables
-	echo 'override KERNELRELEASE = $(ABINAME)'  >> $(BUILD_DIR)/.kernelvariables
-ifneq (,$(findstring ccache,$(DEB_BUILD_OPTIONS)))
-	echo 'CCACHE = ccache' >> $(BUILD_DIR)/.kernelvariables
-	echo 'CC = ccache $(CROSS_COMPILE)gcc' >> $(BUILD_DIR)/.kernelvariables
-endif
-	echo 'ifneq ($$(DEB_BUILD_ARCH),$$(DEB_HOST_ARCH))' >> $(BUILD_DIR)/.kernelvariables
-	echo 'override CROSS_COMPILE = $$(DEB_HOST_GNU_TYPE)-' >> $(BUILD_DIR)/.kernelvariables
-	echo 'endif' >> $(BUILD_DIR)/.kernelvariables
+	echo '-$(DEB_REVISION)' > $(BUILD_HEADERS_DIR)/localversion
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) $(CONFIG)
-	+$(MAKE_CLEAN) O=$(BUILD_DIR) prepare
+	+$(MAKE_CLEAN) O=$(BUILD_HEADERS_DIR) $(CONFIG)
 
+#override_dh_auto_build: build_headers
 override_dh_auto_build:
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) -j$(NUMJOBS) zImage
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) kirkwood-b3.dtb
@@ -84,9 +86,7 @@ override_dh_auto_build:
 override_dh_installmodules:
 	dh_installmodules -n
 
-ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
 override_dh_auto_install: install_headers
-endif
 override_dh_auto_install:
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) INSTALL_MOD_PATH=$(CURDIR)/$(PACKAGE_DIR) INSTALL_MOD_STRIP=1 modules_install
 	mkdir -p $(PACKAGE_DIR)/boot
@@ -114,17 +114,15 @@ install_headers:
 	| \
 	cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
 
-	cd $(BUILD_DIR)
 	( \
-	echo .kernelvariables; \
 	echo .config; \
 	echo arch/$(KERNEL_ARCH)/kernel/asm-offsets.s; \
 	echo Module.symvers; \
 	) \
 	| \
-	cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)'
+	( cd $(BUILD_DIR) ; cpio -pd --preserve-modification-time '$(CURDIR)/$(INSTALL_DIR)' )
 	
-	cp -a scripts $(INSTALL_DIR)
+#	cp -a $(BUILD_DIR)/scripts $(INSTALL_DIR)
 
 	mkdir -p $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)
 	ln -s /usr/src/$(PACKAGE_NAME) $(PACKAGE_DIR)/lib/modules/$(call REAL_VERSION)/build
@@ -132,6 +130,7 @@ install_headers:
 override_dh_clean:
 	rm -f debian/bubba3-kernel.prerm debian/bubba3-kernel.postinst
 	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_HEADERS_DIR)
 	dh_clean $@
 
 override_dh_auto_clean:
