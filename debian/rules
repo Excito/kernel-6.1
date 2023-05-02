@@ -72,6 +72,7 @@ override_dh_auto_configure:
 	echo '-$(DEB_REVISION)' > $(BUILD_DIR)/localversion
 	echo '-$(DEB_REVISION)' > $(BUILD_HEADERS_DIR)/localversion
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) $(CONFIG)
+	+$(MAKE_CLEAN) O=$(BUILD_DIR) prepare
 	+$(MAKE_CLEAN) O=$(BUILD_HEADERS_DIR) $(CONFIG)
 
 #override_dh_auto_build: build_headers
@@ -97,6 +98,7 @@ override_dh_auto_install:
 		-mindepth 1 -maxdepth 1 \
 		\! -name kernel \! -name modules.order \
 		\! -name modules.builtin \
+		\! -name modules.builtin.modinfo \
 		-exec rm {} \+
 	rm -rf $(PACKAGE_DIR)/lib/firmware
 

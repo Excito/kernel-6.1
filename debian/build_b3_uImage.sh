@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ -z "$1" -o ! -d "$1" -o -z "$2" ] ; then
+    echo "Usage : $0 <directory> <version string>"
+    exit 1
+fi
+
 cd $1
 
 echo -n -e \\x11\\x3f\\x3f\\xee > zImage
