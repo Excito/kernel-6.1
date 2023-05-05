@@ -57,7 +57,7 @@ CONFIG=bubba3_defconfig
 PACKAGE_DIR=debian/$(PACKAGE)
 
 %:
-	+dh $@ --parallel
+	dh $@
 
 define REAL_VERSION
 $(shell cat $(BUILD_DIR)/include/config/kernel.release)

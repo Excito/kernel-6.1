@@ -1,15 +1,15 @@
 Source: linux
 Section: kernel
-Priority: extra
+Priority: optional
 Maintainer: Charles Leclerc <leclerc.charles@gmail.com>
-Build-Depends: debhelper, cpio, bison, flex, device-tree-compiler, u-boot-tools, bc, awk, libssl-dev:native, libssl-dev, libelf-dev, gcc-12 <!cross>, gcc-12-arm-linux-gnueabi <cross>
+Build-Depends: debhelper (>= 10), cpio, rsync, bison, flex, device-tree-compiler, u-boot-tools, bc, libssl-dev:native, libssl-dev, libelf-dev, gcc-12 <!cross>, gcc-12-arm-linux-gnueabi <cross>
 Standards-Version: 3.9.2
 Homepage: http://kernel.org
 
 Package: bubba3-kernel
 Architecture: armel
 Depends: ${misc:Depends}
-Description: The linux kernel for the Excito platforms
+Description: Linux kernel for the Excito platforms
  Contains the linux kernel modified to fit on the Excito platforms
 
 Package: bubba3-kernel-headers

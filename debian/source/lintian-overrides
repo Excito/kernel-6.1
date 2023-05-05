@@ -1,0 +1,2 @@
+linux source: license-problem-gfdl-invariants invariant part is: with the :ref:`invariant sections <fdl-invariant>` being list their titles, with the :ref:`front-cover texts <fdl-cover-texts>` being list, and with the :ref:`back-cover texts <fdl-cover-texts>` being list [Documentation/userspace-api/media/fdl-appendix.rst]
+linux source: source-contains-prebuilt-windows-binary *tools/perf/tests/pe-file.exe*
