@@ -1,5 +1,4 @@
-0001-Enable-usage-of-.kernelvariables.patch
-0002-remove-debian-packaging.patch
+0001-remove-debian-packaging.patch
 0100-Revert-scripts-dtc-Update-to-upstream-version-v1.6.1.patch
 0101-Revert-scripts-dtc-Update-to-upstream-version-v1.6.0.patch
 0200-Excito-B3-default-leds.patch

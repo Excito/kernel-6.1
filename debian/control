@@ -2,7 +2,7 @@ Source: linux
 Section: kernel
 Priority: extra
 Maintainer: Charles Leclerc <leclerc.charles@gmail.com>
-Build-Depends: debhelper, dpkg-dev, device-tree-compiler, u-boot-tools, bc, awk, libssl-dev:native
+Build-Depends: debhelper, cpio, bison, flex, device-tree-compiler, u-boot-tools, bc, awk, libssl-dev:native, libssl-dev, libelf-dev, gcc-12 <!cross>, gcc-12-arm-linux-gnueabi <cross>
 Standards-Version: 3.9.2
 Homepage: http://kernel.org
 
@@ -12,10 +12,12 @@ Depends: ${misc:Depends}
 Description: The linux kernel for the Excito platforms
  Contains the linux kernel modified to fit on the Excito platforms
 
-Package: bubba3-kernel-headers-armel
+Package: bubba3-kernel-headers
 Architecture: armel
 Provides: linux-headers
-Depends: ${misc:Depends} gcc-12
+Replaces: bubba3-kernel-headers-armel
+Conflicts: bubba3-kernel-headers-armel
+Depends: ${shlibs:Depends}, ${misc:Depends}, linux-compiler-gcc-12-arm
 Description: Header files for Excito modified kernel (armel)
  This package provides the architecture-specific kernel header files for
  Linux kernel modified by excito.
