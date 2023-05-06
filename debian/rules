@@ -64,11 +64,9 @@ $(shell cat $(BUILD_DIR)/include/config/kernel.release)
 endef
 
 override_dh_auto_configure: 
-	rm -rf $(BUILD_DIR) $(BUILD_HEADERS_DIR)
-	mkdir -p $(BUILD_DIR) $(BUILD_HEADERS_DIR)
+	mkdir -p $(BUILD_DIR)
 	touch .scmversion
 	echo '-$(DEB_REVISION)' > $(BUILD_DIR)/localversion
-	echo '-$(DEB_REVISION)' > $(BUILD_HEADERS_DIR)/localversion
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) $(CONFIG)
 	+$(MAKE_CLEAN) O=$(BUILD_DIR) prepare
 
