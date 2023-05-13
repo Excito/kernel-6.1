@@ -320,7 +320,7 @@
  TAGS
 --- a/Makefile
 +++ b/Makefile
-@@ -1600,7 +1600,7 @@
+@@ -1598,7 +1598,7 @@
  # Directories & files removed with 'make mrproper'
  MRPROPER_FILES += include/config include/generated          \
  		  arch/$(SRCARCH)/include/generated .objdiff \
