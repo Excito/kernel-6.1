@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/configs/bubba3_defconfig
-@@ -0,0 +1,1309 @@
+@@ -0,0 +1,1310 @@
 +# CONFIG_LOCALVERSION_AUTO is not set
 +CONFIG_SYSVIPC=y
 +CONFIG_POSIX_MQUEUE=y
@@ -450,6 +450,7 @@
 +CONFIG_BLK_DEV_DM=m
 +CONFIG_DM_CRYPT=m
 +CONFIG_DM_SNAPSHOT=m
++CONFIG_DM_THIN_PROVISIONING=m
 +CONFIG_DM_MIRROR=m
 +CONFIG_DM_RAID=m
 +CONFIG_DM_ZERO=m
