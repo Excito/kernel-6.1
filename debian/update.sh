@@ -108,6 +108,7 @@ step2() {
         rm ../$f
     done
     rm ../linux_${NEW_VERSION}_armel.changes
+    (cd .. ; gzip linux_${NEW_VERSION}_armel.build)
 
     ssh excito@repo.excito.org /home/excito/bin/reprepro -b /home/excito/repo --ignore=wrongdistribution include bookworm import/linux_${NEW_VERSION}_armel.changes
     ssh excito@repo.excito.org rm import/*
