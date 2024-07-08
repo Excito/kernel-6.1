@@ -40,7 +40,7 @@ step1() {
     echo "Synchronizing branches"
     git pull --all
     
-    release_ver=`curl -s https://www.kernel.org/feeds/kdist.xml | xpath -q -e "//item[starts-with(title, $KERNEL_BRANCH)]/title" | sed -e 's/<\/\?title>//g' -e 's/:.*//'`
+    release_ver=`curl -s https://www.kernel.org/feeds/kdist.xml | xpath -q -e "//item[starts-with(title, '$KERNEL_BRANCH.')]/title" | sed -e 's/<\/\?title>//g' -e 's/:.*//'`
     current_ver=`dpkg-parsechangelog -S Version | sed -e 's/-.*//'`
     
     new_ver=`echo -e "$release_ver\n$current_ver" | sort -rV | head -n 1`
