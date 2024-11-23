@@ -1,3 +1,9 @@
+linux (6.1.119-1) unstable; urgency=medium
+
+  * New upstream version
+
+ -- Charles Leclerc <leclerc.charles@gmail.com>  Sat, 23 Nov 2024 01:46:29 +0100
+
 linux (6.1.118-1) unstable; urgency=medium
 
   * New upstream version
