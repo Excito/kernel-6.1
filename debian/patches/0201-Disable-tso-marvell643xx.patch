@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/marvell/mv643xx_eth.c
 +++ b/drivers/net/ethernet/marvell/mv643xx_eth.c
-@@ -3201,11 +3201,11 @@
+@@ -3211,11 +3211,11 @@
  	dev->watchdog_timeo = 2 * HZ;
  	dev->base_addr = 0;
  
