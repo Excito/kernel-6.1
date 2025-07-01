@@ -102,16 +102,16 @@ step2() {
     git push --tags
 
     echo "Sending and importing package files to the repository"
-    scp ../linux_${NEW_VERSION}_armel.changes excito@repo.excito.org:import
+    scp ../linux_${NEW_VERSION}_armel.changes charles@datacix:/mnt/8000-1/excito/import
     for f in `sed -e '0,/^Files:/d' -e '/^\w/,$d' ../linux_${NEW_VERSION}_armel.changes | awk '{ print $5 }'`; do
-        scp -q ../$f excito@repo.excito.org:import
+        scp -q ../$f charles@datacix:/mnt/8000-1/excito/import
         rm ../$f
     done
     rm ../linux_${NEW_VERSION}_armel.changes
     (cd .. ; gzip linux_${NEW_VERSION}_armel.build)
 
-    ssh excito@repo.excito.org /home/excito/bin/reprepro -b /home/excito/repo --ignore=wrongdistribution include bookworm import/linux_${NEW_VERSION}_armel.changes
-    ssh excito@repo.excito.org rm import/*
+    ssh charles@datacix /usr/bin/reprepro -b /mnt/8000-1/excito/repo --ignore=wrongdistribution include bookworm import/linux_${NEW_VERSION}_armel.changes
+    ssh charles@datacix rm /mnt/8000-1/excito/import/*
     
     echo "All done"
 }
